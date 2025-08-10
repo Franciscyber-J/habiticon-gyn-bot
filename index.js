@@ -207,14 +207,30 @@ client.on('message_create', async msg => {
             break;
 
         case STATES.AGUARDANDO_EMAIL:
-            if (validarEmail(textoMensagem)) {
-                currentState.data.email = textoMensagem;
-                currentState.data.telefone = chatId.replace('@c.us', '');
-                await enviarLeadParaMake(currentState.data);
-                await client.sendMessage(chatId, "✅ *Cadastro concluído com sucesso!*\n\nSeus dados foram encaminhados para um de nossos consultores especializados.");
-                await client.sendMessage(chatId, "_Por favor, aguarde um instante. Em breve, ele(a) entrará em contato por aqui mesmo para dar sequência ao seu sonho da casa própria!_ 🏡");
-                currentState.state = STATES.LEAD_CAPTURADO;
-            } else {
+    if (validarEmail(textoMensagem)) {
+        currentState.data.email = textoMensagem;
+        currentState.data.telefone = chatId.replace('@c.us', '');
+        
+        // Mantém o envio para a planilha
+        const leadEnviado = await enviarLeadParaMake(currentState.data);
+
+        // ### INÍCIO DA ADIÇÃO ###
+        // A linha abaixo presume que o painel já injetou o 'require' no topo do ficheiro.
+        // Ela só executa se o lead foi enviado com sucesso para o Make.com.
+        if (leadEnviado && typeof sendNotification === 'function') {
+            // Supondo que você cadastrou a notificação no painel com o nome "Novos Leads"
+            const nomeDoCanal = 'Novos Leads'; 
+            const mensagemNotificacao = `🎉 Novo lead capturado (Habiticon)!\n\nNome: ${currentState.data.nome}\nTelefone: ${currentState.data.telefone}\nE-mail: ${currentState.data.email}`;
+            
+            sendNotification(nomeDoCanal, mensagemNotificacao);
+            console.log(`[TELEGRAM] Notificação enviada para o canal: ${nomeDoCanal}`);
+        }
+        // ### FIM DA ADIÇÃO ###
+
+        await client.sendMessage(chatId, "✅ *Cadastro concluído com sucesso!*\n\nSeus dados foram encaminhados para um de nossos consultores especializados.");
+        await client.sendMessage(chatId, "_Por favor, aguarde um instante. Em breve, ele(a) entrará em contato por aqui mesmo para dar sequência ao seu sonho da casa própria!_ 🏡");
+        currentState.state = STATES.LEAD_CAPTURADO;
+    } else {
                 await client.sendMessage(chatId, "😕 Humm, este e-mail não parece válido.\n\nPor favor, verifique se digitou corretamente e incluiu um domínio conhecido (como @gmail.com, @hotmail.com, etc.).\n\n_Se preferir, digite *menu* para voltar ao início._");
             }
             break;
