@@ -90,13 +90,10 @@ client.on('qr', qr => { qrcode.generate(qr, { small: true }); });
 client.on('ready', () => { console.log('[LOG DO BOT] >>> CLIENTE PRONTO E CONECTADO! <<<'); });
 
 client.on('message_create', async msg => {
-    // ### INÍCIO DA CORREÇÃO ANTI-LOOP ###
-    // Ignora mensagens de outros bots, contas comerciais ou listas de transmissão
     if (msg.author) {
         console.log(`[MENSAGEM IGNORADA] Mensagem de conta comercial/bot detectada de ${msg.from}. Autor: ${msg.author}`);
         return;
     }
-    // ### FIM DA CORREÇÃO ANTI-LOOP ###
 
     if (msg.isGroup || msg.isStatus || msg.fromMe) return;
 
@@ -222,11 +219,12 @@ client.on('message_create', async msg => {
                 const leadEnviado = await enviarLeadParaMake(currentState.data);
 
                 if (leadEnviado && typeof sendNotification === 'function') {
-                    const nomeDoCanal = 'Novos Leads'; 
                     const mensagemNotificacao = `🎉 Novo lead capturado (Habiticon)!\n\nNome: ${currentState.data.nome}\nTelefone: ${currentState.data.telefone}\nE-mail: ${currentState.data.email}`;
                     
-                    sendNotification(nomeDoCanal, mensagemNotificacao);
-                    console.log(`[TELEGRAM] Notificação enviada para o canal: ${nomeDoCanal}`);
+                    // ### ALTERAÇÃO FINAL AQUI ###
+                    // Usando o nome da finalidade diretamente para ser detetável pelo painel.
+                    sendNotification('alerta_novo_lead_residencial_graciosa', mensagemNotificacao);
+                    console.log("[TELEGRAM] Notificação enviada para a finalidade: alerta_novo_lead_residencial_graciosa");
                 }
 
                 await client.sendMessage(chatId, "✅ *Cadastro concluído com sucesso!*\n\nSeus dados foram encaminhados para um de nossos consultores especializados.");
